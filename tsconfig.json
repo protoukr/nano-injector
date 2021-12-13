@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "lib": ["es2017", "DOM"],
+    "esModuleInterop": true,
+    "target": "ES6",
+    "moduleResolution": "Node",
+    "declaration": true,
+    "sourceMap": false,
+    "outDir": "./lib",
+    "strictNullChecks": true,
+    "declarationDir": "typings/",
+    "rootDir": "./src",
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["./src"]
+}
