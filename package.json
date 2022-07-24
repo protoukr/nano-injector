@@ -1,6 +1,6 @@
 {
   "name": "nano-injector",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Miniature dependency injection library for TypeScript and JavaScript",
   "main": "./lib/index.js",
   "types": "./typings/index.d.ts",
