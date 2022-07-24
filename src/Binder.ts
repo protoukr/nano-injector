@@ -1,5 +1,10 @@
 import { Injector } from './Injector'
-import { InjectingError } from './InjectingError'
+
+export class NoCreationMethodSpecifiedError extends Error {
+  constructor () {
+    super('No creation method specified')
+  }
+}
 
 /**
  * Class through which is defined how to create value for this binder
@@ -83,6 +88,6 @@ export class Binder<T> {
     if (this.factory != null) {
       return this.factory(this.injector)
     }
-    throw new InjectingError('Creation method isn\'t specified')
+    throw new NoCreationMethodSpecifiedError()
   }
 }

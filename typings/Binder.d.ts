@@ -1,4 +1,7 @@
 import { Injector } from './Injector';
+export declare class NoCreationMethodSpecifiedError extends Error {
+    constructor();
+}
 /**
  * Class through which is defined how to create value for this binder
  */

@@ -1,5 +1,6 @@
 import { InjectorsStack } from './InjectorsStack'
-import { InjectingError } from './InjectingError'
+
+export type ProviderValueType<T extends Provider<any>> = T extends Provider<infer R> ? R : never
 
 /**
  * Symbol used for storing the id of a provider
@@ -40,15 +41,13 @@ let PROVIDER_ID = 0
  * @param name name for this provider used mainly for debugging purposes
  */
 export function createProvider<T> (name?: string): Provider<T> {
-  function provider (...args: unknown[]): T | unknown {
-    const value = InjectorsStack.get(provider as Provider<T>)
-    if (value !== undefined) {
-      return value
+  function provider (defValue?: any): T | unknown {
+    const hasDefaultValue = arguments.length > 0
+    const { activeInjector } = InjectorsStack
+    if (hasDefaultValue) {
+      return activeInjector.tryGetValue(provider as Provider<T>, defValue)
     }
-    if (args.length !== 0) {
-      return args[0]
-    }
-    throw new InjectingError(`Value of ${name ?? 'unknown'} provider is not found`)
+    return activeInjector.getValue(provider as Provider<T>)
   }
 
   provider[NAME_SYMBOL] = name
@@ -80,6 +79,6 @@ export function getProviderID (provider: Provider<unknown>): number {
  * Returns the name of the specified provider
  * @param provider
  */
-export function getProviderName (provider: Provider<unknown>): string {
+export function getProviderName (provider: Provider<unknown>): string | undefined {
   return provider[NAME_SYMBOL]
 }

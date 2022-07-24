@@ -1,5 +1,14 @@
 import { Binder } from './Binder';
-import { Provider } from './Provider';
+import { Provider, ProviderValueType } from './Provider';
+/**
+ * Thrown when circular dependency is detected
+ */
+export declare class CircularDependencyError extends Error {
+    constructor(providers: Array<Provider<unknown>>);
+}
+export declare class NoBinderError extends Error {
+    constructor(provider: Provider<unknown>);
+}
 declare type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (k: infer R) => void ? R : never;
 /**
  * Provider which every injector binds itself to
@@ -42,25 +51,35 @@ export declare class Injector {
      * @param type
      * @param args
      */
-    createInstance<ClassT extends new (...args: unknown[]) => unknown, CtorParamsT extends ConstructorParameters<ClassT>, InstT extends InstanceType<ClassT>>(type: ClassT, ...args: CtorParamsT): InstT;
+    createInstance<ClassT extends new (...args: unknown[]) => unknown>(type: ClassT, ...args: ConstructorParameters<ClassT>): InstanceType<ClassT>;
     /**
      * Activates this injector and calls the function with provided arguments
      * @param func function which should be called
      * @param args args which should be passed to the called function
      */
-    callFunc<FuncT extends (...args: unknown[]) => unknown, ParamsT extends Parameters<FuncT>, ReturnT extends ReturnType<FuncT>>(func: FuncT, ...args: ParamsT): ReturnT;
+    callFunc<FuncT extends (...args: unknown[]) => unknown>(func: FuncT, ...args: Parameters<FuncT>): ReturnType<FuncT>;
     /**
      * Returns bound to the specified provider value. If the value is not found
-     * undefined is returned
+     * exception is thrown
      * @param provider
      */
-    getValue<ProviderT extends Provider<unknown>, ValueT extends ProviderT extends Provider<infer R> ? R : never>(provider: ProviderT): ValueT | undefined;
+    getValue<ProviderT extends Provider<unknown>>(provider: ProviderT): ProviderValueType<ProviderT>;
+    /**
+     * Returns bound to the specified provider value. If the value is not found
+     * default value is returned
+     * @param provider
+     */
+    tryGetValue<ProviderT extends Provider<unknown>>(provider: ProviderT): ProviderValueType<ProviderT> | undefined;
+    tryGetValue<ProviderT extends Provider<unknown>, DefValT>(provider: ProviderT, defVal: DefValT): ProviderValueType<ProviderT> | DefValT;
+    private pushResolvingProvider;
+    private popResolvingProvder;
+    private getBinder;
     /**
      * Finds binder for the specified provider recursively up to the root injector
      * @param provider
      * @private
      */
-    private getBinder;
+    private tryGetBinderRecursively;
     /**
      * Checks is there circular dependency and throws error if so
      * @param provider

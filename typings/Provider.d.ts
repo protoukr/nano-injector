@@ -1,3 +1,4 @@
+export declare type ProviderValueType<T extends Provider<any>> = T extends Provider<infer R> ? R : never;
 /**
  * Symbol used for storing the id of a provider
  */
@@ -45,5 +46,5 @@ export declare function getProviderID(provider: Provider<unknown>): number;
  * Returns the name of the specified provider
  * @param provider
  */
-export declare function getProviderName(provider: Provider<unknown>): string;
+export declare function getProviderName(provider: Provider<unknown>): string | undefined;
 export {};

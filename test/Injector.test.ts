@@ -1,11 +1,10 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
-import { InjectingError } from '../src/InjectingError'
-import { Injector } from '../src/Injector'
+import { NoBinderError, CircularDependencyError, Injector } from '../src/Injector'
 import { createProvider } from '../src/Provider'
 
 describe('Injector', () => {
-  it('check value getting', () => {
+  it('check bound value getting', () => {
     const provider = createProvider<number>()
     const injector = new Injector()
     injector.bindProvider(provider).toValue(0)
@@ -13,6 +12,22 @@ describe('Injector', () => {
     const value = injector.getValue(provider)
 
     assert.equal(value, 0)
+  })
+
+  it('check unbound value getting', () => {
+    const provider = createProvider<number>()
+    const injector = new Injector()
+
+    assert.throws(() => injector.getValue(provider), NoBinderError)
+  })
+
+  it('check unbound value safe getting', () => {
+    const provider = createProvider<number>()
+    const injector = new Injector()
+
+    const value = injector.tryGetValue(provider, 0)
+
+    assert.strictEqual(value, 0)
   })
 
   it('check value getting through composition', () => {
@@ -63,7 +78,7 @@ describe('Injector', () => {
     injector.bindProvider(p2).toFactory(() => p3())
     injector.bindProvider(p3).toFactory(() => p1())
 
-    assert.throws(() => injector.getValue(p1), InjectingError)
+    assert.throws(() => injector.getValue(p1), CircularDependencyError)
   })
 
   it('check instance creation', () => {
@@ -74,8 +89,13 @@ describe('Injector', () => {
     const injector = new Injector()
     injector.bindProvider(provider).toValue(10)
 
+    // TODO: check in future typescript versions
+    // @ts-expect-error
     const inst = injector.createInstance(SomeClass)
 
+    assert.instanceOf(inst, SomeClass)
+    // TODO: check in future typescript versions
+    // @ts-expect-error
     assert.strictEqual(inst.value, 10)
   })
 
@@ -88,6 +108,8 @@ describe('Injector', () => {
     const v1 = injector.getValue(p1)
     const v2 = injector.getValue(p2)
 
+    // TODO: check in future typescript versions
+    // @ts-expect-error
     assert.isTrue(v1 === v2)
   })
 

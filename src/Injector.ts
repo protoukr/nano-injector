@@ -3,10 +3,28 @@ import {
   createProvider,
   getProviderName,
   isProvider,
-  Provider
+  Provider,
+  ProviderValueType
 } from './Provider'
 import { InjectorsStack } from './InjectorsStack'
-import { InjectingError } from './InjectingError'
+
+/**
+ * Thrown when circular dependency is detected
+ */
+export class CircularDependencyError extends Error {
+  constructor (providers: Array<Provider<unknown>>) {
+    const providerNames = providers.map(getProviderName)
+      .map((name) => name ?? '?')
+    super(`Circular dependency detected: ${providerNames.join('->')}`)
+  }
+}
+
+export class NoBinderError extends Error {
+  constructor (provider: Provider<unknown>) {
+    const providerName = getProviderName(provider) ?? 'unknown'
+    super(`Value of ${providerName} provider is not found`)
+  }
+}
 
 // https://stackoverflow.com/a/50375286
 type UnionToIntersection<T> =
@@ -84,11 +102,9 @@ export class Injector {
    */
   createInstance<
     ClassT extends new (...args: unknown[]) => unknown,
-    CtorParamsT extends ConstructorParameters<ClassT>,
-    InstT extends InstanceType<ClassT>
-  >(type: ClassT, ...args: CtorParamsT): InstT {
+  >(type: ClassT, ...args: ConstructorParameters<ClassT>): InstanceType<ClassT> {
     // eslint-disable-next-line new-cap
-    return this.activateAndCall(() => new type(...args)) as InstT
+    return this.activateAndCall(() => new type(...args)) as InstanceType<ClassT>
   }
 
   /**
@@ -97,31 +113,64 @@ export class Injector {
    * @param args args which should be passed to the called function
    */
   callFunc<
-    FuncT extends (...args: unknown[]) => unknown,
-    ParamsT extends Parameters<FuncT>,
-    ReturnT extends ReturnType<FuncT>
-  >(func: FuncT, ...args: ParamsT): ReturnT {
-    return this.activateAndCall<ReturnT>(() => func(...args) as ReturnT)
+    FuncT extends (...args: unknown[]) => unknown
+  >(func: FuncT, ...args: Parameters<FuncT>): ReturnType<FuncT> {
+    return this.activateAndCall<ReturnType<FuncT>>(() => func(...args) as ReturnType<FuncT>)
   }
 
   /**
    * Returns bound to the specified provider value. If the value is not found
-   * undefined is returned
+   * exception is thrown
    * @param provider
    */
   getValue<
     ProviderT extends Provider<unknown>,
-    ValueT extends ProviderT extends Provider<infer R> ? R : never
-  >(provider: ProviderT): ValueT | undefined {
+  >(provider: ProviderT): ProviderValueType<ProviderT> {
     const binder = this.getBinder(provider)
-    if (binder == null) {
-      return undefined
+    this.pushResolvingProvider(provider)
+    const value = this.activateAndCall(() => binder.getValue() as ProviderValueType<ProviderT>)
+    this.popResolvingProvder()
+    return value
+  }
+
+  /**
+   * Returns bound to the specified provider value. If the value is not found
+   * default value is returned
+   * @param provider
+   */
+  tryGetValue<
+   ProviderT extends Provider<unknown>,
+  >(provider: ProviderT): ProviderValueType<ProviderT> | undefined
+  tryGetValue<
+   ProviderT extends Provider<unknown>,
+   DefValT,
+ >(provider: ProviderT, defVal: DefValT): ProviderValueType<ProviderT> | DefValT
+  tryGetValue (provider: Provider<unknown>, defValue?: unknown): unknown {
+    try {
+      return this.getValue(provider)
+    } catch (err) {
+      if (err instanceof NoBinderError) {
+        return defValue
+      }
+      throw err
     }
+  }
+
+  private pushResolvingProvider (provider: Provider<unknown>): void {
     this.checkCircularDependency(provider)
     this.resolvingProviders.push(provider)
-    const value = this.activateAndCall(() => binder.getValue() as ValueT)
+  }
+
+  private popResolvingProvder (): void {
     this.resolvingProviders.pop()
-    return value
+  }
+
+  private getBinder<ValueT>(provider: Provider<ValueT>): Binder<ValueT> {
+    const binder = this.tryGetBinderRecursively(provider)
+    if (binder == null) {
+      throw new NoBinderError(provider)
+    }
+    return binder
   }
 
   /**
@@ -129,12 +178,11 @@ export class Injector {
    * @param provider
    * @private
    */
-  private getBinder<ValueT>(provider: Provider<ValueT>): Binder<ValueT> | undefined {
-    const binder = this.binders.get(provider) as Binder<ValueT> | undefined
-    if (binder == null && this.parent != null) {
-      return this.parent.getBinder(provider)
-    }
-    return binder
+  private tryGetBinderRecursively<ValueT>(provider: Provider<ValueT>): Binder<ValueT> | undefined {
+    return (
+      this.binders.get(provider) ??
+      this.parent?.tryGetBinderRecursively(provider)
+    ) as Binder<ValueT> | undefined
   }
 
   /**
@@ -144,16 +192,10 @@ export class Injector {
    */
   private checkCircularDependency (provider: Provider<unknown>): void {
     const i = this.resolvingProviders.indexOf(provider)
-    if (i === -1) {
-      return
+    if (i !== -1) {
+      const providers = [...this.resolvingProviders.slice(i), provider]
+      throw new CircularDependencyError(providers)
     }
-    const providers = [...this.resolvingProviders.slice(i), provider]
-      .map(getProviderName)
-      .map((name) => name ?? '?')
-
-    throw new InjectingError(
-      `Circular dependency detected: ${providers.join('->')}`
-    )
   }
 
   /**
