@@ -32,7 +32,7 @@ export declare class Binder<T> {
      * will be ignored
      * @param factory
      */
-    toFactory(factory: (injector?: Injector) => T): Binder<T>;
+    toFactory(factory: (injector: Injector) => T): Binder<T>;
     /**
      * Defines whether value should be a singleton. If yes the value will be created only once
      * and the same instance will be returned forever

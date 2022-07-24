@@ -59,7 +59,7 @@ export class Binder<T> {
    * will be ignored
    * @param factory
    */
-  toFactory (factory: (injector?: Injector) => T): Binder<T> {
+  toFactory (factory: (injector: Injector) => T): Binder<T> {
     this.factory = factory
     this.ctor = undefined
     this.value = undefined
