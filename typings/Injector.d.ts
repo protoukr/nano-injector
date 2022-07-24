@@ -51,13 +51,13 @@ export declare class Injector {
      * @param type
      * @param args
      */
-    createInstance<ClassT extends new (...args: unknown[]) => unknown>(type: ClassT, ...args: ConstructorParameters<ClassT>): InstanceType<ClassT>;
+    createInstance<ClassT extends new (...args: any[]) => unknown>(type: ClassT, ...args: ConstructorParameters<ClassT>): InstanceType<ClassT>;
     /**
      * Activates this injector and calls the function with provided arguments
      * @param func function which should be called
      * @param args args which should be passed to the called function
      */
-    callFunc<FuncT extends (...args: unknown[]) => unknown>(func: FuncT, ...args: Parameters<FuncT>): ReturnType<FuncT>;
+    callFunc<FuncT extends (...args: any[]) => unknown>(func: FuncT, ...args: Parameters<FuncT>): ReturnType<FuncT>;
     /**
      * Returns bound to the specified provider value. If the value is not found
      * exception is thrown

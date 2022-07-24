@@ -89,13 +89,9 @@ describe('Injector', () => {
     const injector = new Injector()
     injector.bindProvider(provider).toValue(10)
 
-    // TODO: check in future typescript versions
-    // @ts-expect-error
     const inst = injector.createInstance(SomeClass)
 
     assert.instanceOf(inst, SomeClass)
-    // TODO: check in future typescript versions
-    // @ts-expect-error
     assert.strictEqual(inst.value, 10)
   })
 

@@ -101,7 +101,7 @@ export class Injector {
    * @param args
    */
   createInstance<
-    ClassT extends new (...args: unknown[]) => unknown,
+    ClassT extends new (...args: any[]) => unknown,
   >(type: ClassT, ...args: ConstructorParameters<ClassT>): InstanceType<ClassT> {
     // eslint-disable-next-line new-cap
     return this.activateAndCall(() => new type(...args)) as InstanceType<ClassT>
@@ -113,7 +113,7 @@ export class Injector {
    * @param args args which should be passed to the called function
    */
   callFunc<
-    FuncT extends (...args: unknown[]) => unknown
+    FuncT extends (...args: any[]) => unknown
   >(func: FuncT, ...args: Parameters<FuncT>): ReturnType<FuncT> {
     return this.activateAndCall<ReturnType<FuncT>>(() => func(...args) as ReturnType<FuncT>)
   }
