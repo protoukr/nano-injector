@@ -187,8 +187,10 @@ export class Injector {
    */
   private activateAndCall<T>(func: () => T): T {
     InjectorsStack.push(this);
-    const value = func();
-    InjectorsStack.pop();
-    return value;
+    try {
+      return func();
+    } finally {
+      InjectorsStack.pop();
+    }
   }
 }
