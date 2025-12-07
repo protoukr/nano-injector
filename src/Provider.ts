@@ -17,7 +17,7 @@ const NAME_SYMBOL = Symbol('name');
  */
 export interface Provider<T> {
   readonly [ID_SYMBOL]: number;
-  readonly [NAME_SYMBOL]: string;
+  readonly [NAME_SYMBOL]?: string;
 
   /**
    * Returns bound to this provider value. Throws the exception if it's not found.
@@ -41,18 +41,19 @@ let PROVIDER_ID = 0;
  * @param name name for this provider used mainly for debugging purposes
  */
 export function createProvider<T>(name?: string): Provider<T> {
-  function provider(defValue?: any): T | unknown {
+  function callback(defValue?: any): T {
     const hasDefaultValue = arguments.length > 0;
     const { activeInjector } = InjectorsStack;
     if (hasDefaultValue) {
-      return activeInjector.tryGetValue(provider as Provider<T>, defValue);
+      return activeInjector.tryGetValue(provider, defValue);
     }
-    return activeInjector.getValue(provider as Provider<T>);
+    return activeInjector.getValue(provider);
   }
-
-  provider[NAME_SYMBOL] = name;
-  provider[ID_SYMBOL] = PROVIDER_ID++;
-  return provider as Provider<T>;
+  const provider: Provider<T> = Object.assign(callback, {
+    [NAME_SYMBOL]: name,
+    [ID_SYMBOL]: PROVIDER_ID++,
+  });
+  return provider;
 }
 
 /**

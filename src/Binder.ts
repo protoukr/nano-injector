@@ -13,7 +13,7 @@ export class Binder<T> {
   private value: T | undefined;
   private ctor: (new () => T) | undefined;
   private factory: ((injector: Injector) => T) | undefined;
-  private isSingleton: boolean;
+  private isSingleton: boolean = false;
 
   constructor(private readonly injector: Injector) {}
 

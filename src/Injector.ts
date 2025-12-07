@@ -78,11 +78,12 @@ export class Injector {
    * @param providers
    */
   injectValues<T extends object, K extends keyof T>(instance: T, providers: Record<K, Provider<T[K]>>): void {
-    Object.entries(providers)
-      .filter(([, value]) => isProvider(value))
-      .forEach(([name, provider]: [string, Provider<T[K]>]) => {
-        instance[name] = this.getValue(provider);
-      });
+    (Object.keys(providers) as K[]).forEach((key) => {
+      const provider = providers[key];
+      if (isProvider(provider)) {
+        instance[key] = this.getValue(provider);
+      }
+    });
   }
 
   /**

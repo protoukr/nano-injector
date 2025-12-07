@@ -8,7 +8,7 @@
     "declaration": true,
     "sourceMap": false,
     "outDir": "./lib",
-    "strictNullChecks": true,
+    "strict": true,
     "declarationDir": "typings/",
     "rootDir": "./src",
     "forceConsistentCasingInFileNames": true
