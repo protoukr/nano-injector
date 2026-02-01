@@ -30,6 +30,7 @@
     "build": "tsc",
     "clean": "rimraf typings docs lib",
     "docs": "typedoc src/index.ts",
+    "example": "npx ts-node ./examples/index.ts",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
     "prepublishOnly": "npm run verify",

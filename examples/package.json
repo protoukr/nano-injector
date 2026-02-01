@@ -1,6 +1,0 @@
-{
-  "name": "nano-injector-examples",
-  "version": "1.0.0",
-  "private": true,
-  "main": "bin/index.js"
-}

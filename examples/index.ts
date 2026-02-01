@@ -1,161 +1,115 @@
-import { Injector, createProvider, $Injector } from '..';
+import { Injector, createProvider } from '../src';
 
-// to distinguish providers from any other entities $ sign is used
-const $Clock = createProvider<(cb: () => void, time: number) => number>();
-const $ClockRate = createProvider<number>();
+// ==========================================
+// 1. Define Interfaces and Providers
+// ==========================================
 
-const $CPU = createProvider<CPU>();
-
-interface CPU {
-  readonly model: string;
-  readonly numCores: number;
-  readonly frequency: number;
+interface Logger {
+  log: (msg: string) => void;
 }
 
-const $GPU = createProvider<GPU>();
-
-interface GPU {
-  readonly model: string;
-  readonly numRayTracingCores: number;
-  readonly memorySize: number;
+interface Config {
+  appName: string;
+  port: number;
 }
 
-const $RAM = createProvider<RAM>();
+// Create providers (tokens) for our dependencies
+const $Logger = createProvider<Logger>('Logger');
+const $Config = createProvider<Config>('Config');
 
-interface RAM {
-  readonly capacity: number;
-}
+// ==========================================
+// 2. Define Implementations
+// ==========================================
 
-const $Motherboard = createProvider<Motherboard>();
-
-interface Motherboard {
-  readonly cpu: CPU;
-  readonly gpu: GPU;
-  readonly ram: RAM;
-}
-
-class GeForce911 implements GPU {
-  model = 'GeForce911';
-  numRayTracingCores = 100;
-  memorySize = 2048;
-}
-
-class DefMotherboard implements Motherboard {
-  constructor(
-    readonly model: string,
-    public cpu = $CPU(),
-    public gpu = $GPU(),
-    public ram = $RAM(),
-  ) {}
-}
-
-class PC {
-  constructor(
-    private readonly name: string,
-    private readonly motherboard = $Motherboard(),
-  ) {}
-}
-
-// defining injector through which injection occurs
-const injector = new Injector();
-
-// binding $CPU provider to the exact value
-injector.bindProvider($CPU).toValue({ numCores: 4, model: 't7', frequency: 2000 });
-
-// binding $GPU provider to class which conforms to provider's returning type
-// calling asSingleton specifies that value should be created only once
-injector.bindProvider($GPU).toConstructor(GeForce911).asSingleton();
-
-// binding $RAM provider to the factory which creates value conforming to
-// provider's returning type
-injector.bindProvider($RAM).toFactory(() => ({
-  capacity: Math.floor(Math.random() * 1024),
-}));
-
-injector
-  .bindProvider($Motherboard)
-  .toFactory(
-    () =>
-      // only one required parameter is passed, the rest are initialized
-      // automatically through providers
-      new DefMotherboard('Asus ABC-123'),
-  )
-  .asSingleton();
-
-// without ignoring compiler would tell you about wrong value's type
-// @ts-expect-error
-injector.bindProvider($ClockRate).toValue('asd');
-
-injector.bindProvider($ClockRate).toValue(1000);
-
-injector.bindProvider($Clock).toValue(setTimeout);
-
-// the first parameter of PC constructor is required, so it is passed into the
-// construction method
-const myPC = injector.createInstance(PC, 'My pc');
-console.log('Rate my setup:', myPC);
-
-// directly getting the bound to the providers values
-console.log('CPU:', injector.getValue($CPU));
-console.log('GPU:', injector.getValue($GPU));
-console.log('RAM:', injector.getValue($RAM));
-
-injector.getValue($Clock)(() => console.log('Tick!'), 1000);
-
-console.log(
-  'Default motherboard:',
-  // manually creating instance with all its dependencies
-  new DefMotherboard(
-    'Asus xyz',
-    { frequency: 123, model: 'Intel xyz', numCores: 1 },
-    { model: 'ZXC-222', memorySize: 0, numRayTracingCores: 1 },
-    { capacity: 123 },
-  ),
-);
-
-// calling function through injector
-injector.callFunc(() => {
-  // inside function all providers return bound to them values
-  console.log('Inside function');
-  console.log('CPU:', $CPU());
-  console.log('GPU:', $GPU());
-  console.log('RAM:', $RAM());
-});
-
-// binding few providers to one value
-injector.bindProvider($RAM, $CPU, $GPU).toValue({
-  capacity: 10,
-  frequency: 100,
-  memorySize: 200,
-  model: 'ATB-21',
-  numCores: 2,
-  numRayTracingCores: 60,
-});
-
-console.log('Combined CPU:', injector.getValue($CPU), injector.getValue($GPU), injector.getValue($RAM));
-
-// creating composition of injectors
-const childInjector = new Injector({ parent: injector });
-
-// overriding $CPU binding of parent injector inside child injector
-childInjector.bindProvider($CPU).toValue({ numCores: 1, model: 'z2', frequency: 999 });
-
-console.log('Overridden CPU:', childInjector.getValue($CPU));
-
-const newMotherboard = new (class {
-  gpu: GPU;
-  cpu: CPU;
-})();
-// injecting value to the existing instance
-injector.injectValues(newMotherboard, { cpu: $CPU, gpu: $GPU });
-console.log('New motherboard:', newMotherboard);
-
-// injector binds itself to $Injector provider, therefore it can be injected
-// like any other values
-class MyMegaPC {
-  constructor(injector = $Injector()) {
-    // getting instance from the injected injector
-    console.log(injector.getValue($CPU));
+class ConsoleLogger implements Logger {
+  log(msg: string): void {
+    console.log(`[Console] ${msg}`);
   }
 }
-injector.createInstance(MyMegaPC);
+
+class JsonLogger implements Logger {
+  log(msg: string): void {
+    console.log(JSON.stringify({ timestamp: Date.now(), msg }));
+  }
+}
+
+// A Service that depends on Logger and Config
+class AppService {
+  // Dependencies are injected via default parameters!
+  constructor(
+    private readonly logger = $Logger(),
+    private readonly config = $Config(),
+  ) {}
+
+  start(): void {
+    this.logger.log(`Starting ${this.config.appName} on port ${this.config.port}...`);
+  }
+}
+
+// ==========================================
+// 3. Main Execution
+// ==========================================
+
+function main(): void {
+  console.log('--- standard injection ---');
+  const injector = new Injector();
+
+  // Bind Config to a value
+  injector.bindProvider($Config).toValue({
+    appName: 'MyAwesomeApp',
+    port: 3000,
+  });
+
+  // Bind Logger to a Class
+  injector.bindProvider($Logger).toConstructor(ConsoleLogger);
+
+  // Create an instance of AppService.
+  // Nano-injector automatically resolves arguments.
+  const app = injector.createInstance(AppService);
+  app.start();
+
+  console.log('\n--- swapping implementations ---');
+  // We can re-bind or create a new injector with different bindings
+  const jsonInjector = new Injector();
+  jsonInjector.bindProvider($Config).toValue({ appName: 'JsonApp', port: 8080 });
+  jsonInjector.bindProvider($Logger).toConstructor(JsonLogger);
+
+  const jsonApp = jsonInjector.createInstance(AppService);
+  jsonApp.start(); // Output will be JSON format
+
+  console.log('\n--- hierarchical injection ---');
+  // Child injector uses parent's config but overrides logger
+  const childInjector = new Injector({ parent: injector });
+  childInjector.bindProvider($Logger).toValue({
+    log: (msg) => console.log(`[Child Override] ${msg}`),
+  });
+
+  const childApp = childInjector.createInstance(AppService);
+  // Config comes from 'injector' (parent), Logger comes from 'childInjector'
+  childApp.start();
+
+  console.log('\n--- function injection ---');
+  // We can also use providers inside arbitrary functions
+  injector.callFunc(() => {
+    const config = $Config();
+    console.log(`Running inside function with config: ${config.appName}`);
+  });
+
+  console.log('\n--- mixed manual and injected parameters ---');
+  class User {
+    constructor(
+      public readonly name: string, // parameters without default value must be passed manually
+      private readonly logger = $Logger(),
+    ) {}
+
+    greet() {
+      this.logger.log(`Hello, I am ${this.name}`);
+    }
+  }
+
+  // We pass 'Alice' manually. The second argument (logger) is resolved by the injector.
+  const user = injector.createInstance(User, 'Alice');
+  user.greet();
+}
+
+main();

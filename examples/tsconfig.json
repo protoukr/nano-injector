@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "target": "ESNext",
-    "outDir": "build"
-  },
-  "files": ["./index.ts"]
-}
