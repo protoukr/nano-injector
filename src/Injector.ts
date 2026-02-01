@@ -3,7 +3,7 @@ import { createProvider, getProviderName, isProvider, Provider, ProviderValueTyp
 import { InjectorsStack } from './InjectorsStack';
 
 /**
- * Thrown when circular dependency is detected
+ * Error thrown when a circular dependency is detected.
  */
 export class CircularDependencyError extends Error {
   constructor(providers: Array<Provider<unknown>>) {
@@ -23,13 +23,12 @@ export class NoBinderError extends Error {
 type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (k: infer R) => void ? R : never;
 
 /**
- * Provider which every injector binds itself to
+ * The provider to which every injector binds itself.
  */
 export const $Injector = createProvider<Injector>();
 
 /**
- * Main entity in the library, which holds provider's bindings and through which
- * dependencies are resolved
+ * The central entity of the library. It holds provider bindings and resolves dependencies.
  */
 export class Injector {
   private readonly binders = new Map<() => unknown, Binder<unknown>>();
@@ -40,9 +39,9 @@ export class Injector {
   private readonly logger: (msg: string) => unknown;
 
   /**
-   * @param params.name name of the injector which can be useful mainly for debugging purposes
-   * @param params.parent parent injector for the composition of injectors
-   * @param params.logger specific log function if the custom output is required
+   * @param params.name Name of the injector (useful for debugging).
+   * @param params.parent Parent injector for composing injectors.
+   * @param params.logger Custom logger function.
    */
   constructor(
     params: {
@@ -59,9 +58,9 @@ export class Injector {
   }
 
   /**
-   * Creates new binder and joins it to the specified providers. If the provider
-   * is already bound, then overriding occurs
-   * @param providers providers which the binder should be joined to
+   * Creates a new binder and links it to the specified providers.
+   * If a provider is already bound, the binding is overridden.
+   * @param providers The providers to bind.
    */
   bindProvider<
     ProviderT extends Array<Provider<unknown>>,
@@ -73,7 +72,7 @@ export class Injector {
   }
 
   /**
-   * Resolves all providers to their values and assigns them to the specified instance
+   * Resolves specific providers to their values and assigns them to the instance's properties.
    * @param instance
    * @param providers
    */
@@ -87,7 +86,7 @@ export class Injector {
   }
 
   /**
-   * Activates this injector and creates new instance of the type with the provided arguments
+   * Activates the injector and creates a new instance of the given class using the provided arguments.
    * @param type
    * @param args
    */
@@ -99,7 +98,7 @@ export class Injector {
   }
 
   /**
-   * Activates this injector and calls the function with provided arguments
+   * Activates the injector and calls the given function with the provided arguments.
    * @param func function which should be called
    * @param args args which should be passed to the called function
    */
@@ -108,8 +107,7 @@ export class Injector {
   }
 
   /**
-   * Returns bound to the specified provider value. If the value is not found
-   * exception is thrown
+   * Returns the value bound to the specified provider. Throws an exception if the value is not found.
    * @param provider
    */
   getValue<ProviderT extends Provider<unknown>>(provider: ProviderT): ProviderValueType<ProviderT> {
@@ -121,8 +119,7 @@ export class Injector {
   }
 
   /**
-   * Returns bound to the specified provider value. If the value is not found
-   * default value is returned
+   * Returns the value bound to the specified provider, or the default value if the bound value is not found.
    * @param provider
    */
   tryGetValue<ProviderT extends Provider<unknown>>(provider: ProviderT): ProviderValueType<ProviderT> | undefined;
@@ -159,7 +156,7 @@ export class Injector {
   }
 
   /**
-   * Finds binder for the specified provider recursively up to the root injector
+   * Recursively looks up the binder for the specified provider, traversing up to the root injector.
    * @param provider
    * @private
    */
@@ -168,7 +165,7 @@ export class Injector {
   }
 
   /**
-   * Checks is there circular dependency and throws error if so
+   * Checks for circular dependencies and throws an error if one is detected.
    * @param provider
    * @private
    */
@@ -181,7 +178,7 @@ export class Injector {
   }
 
   /**
-   * Temporary activates this injector calls provided function and returns its value
+   * Temporarily activates this injector to execute the provided function and return its result.
    * @param func
    * @private
    */

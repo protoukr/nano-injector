@@ -7,7 +7,7 @@ export class NoCreationMethodSpecifiedError extends Error {
 }
 
 /**
- * Class through which is defined how to create value for this binder
+ * A class that defines how to create a value for this binder.
  */
 export class Binder<T> {
   private value: T | undefined;
@@ -18,7 +18,7 @@ export class Binder<T> {
   constructor(private readonly injector: Injector) {}
 
   /**
-   * Creates the new value if needed through previously defined method, and returns it
+   * Creates a new value (if needed) using the defined creation method, and returns it.
    */
   getValue(): T {
     if (this.value !== undefined) {
@@ -32,7 +32,7 @@ export class Binder<T> {
   }
 
   /**
-   * Directly defines value for this binder
+   * Sets a specific value for this binder.
    * @param value
    */
   toValue(value: T): Binder<T> {
@@ -43,8 +43,7 @@ export class Binder<T> {
   }
 
   /**
-   * Defines constructor as a method for creating value. All previously defined methods
-   * will be ignored
+   * Use a class constructor to create the value. Previous creation methods are cleared.
    * @param ctor
    */
   toConstructor(ctor: new () => T): Binder<T> {
@@ -55,8 +54,7 @@ export class Binder<T> {
   }
 
   /**
-   * Defines factory as a method for creating value. All previously defined methods
-   * will be ignored
+   * Use a factory function to create the value. Previous creation methods are cleared.
    * @param factory
    */
   toFactory(factory: (injector: Injector) => T): Binder<T> {
@@ -67,8 +65,7 @@ export class Binder<T> {
   }
 
   /**
-   * Defines whether value should be a singleton. If yes the value will be created only once
-   * and the same instance will be returned forever
+   * Configures whether the value should be a singleton. If true, the value is created once and reused for all subsequent requests.
    * @param value
    */
   asSingleton(value = true): Binder<T> {
@@ -77,7 +74,7 @@ export class Binder<T> {
   }
 
   /**
-   * Creates value through previously defined method
+   * Creates the value using the configured creation method.
    * @private
    */
   private createValue(): T {

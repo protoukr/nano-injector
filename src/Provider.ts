@@ -3,7 +3,7 @@ import { InjectorsStack } from './InjectorsStack';
 export type ProviderValueType<T extends Provider<any>> = T extends Provider<infer R> ? R : never;
 
 /**
- * Symbol used for storing the id of a provider
+ * Symbol used to store the unique ID of a provider.
  */
 const ID_SYMBOL = Symbol('id');
 /**
@@ -12,23 +12,21 @@ const ID_SYMBOL = Symbol('id');
 const NAME_SYMBOL = Symbol('name');
 
 /**
- * Provider is a second main concept in the library. Basically just it is just a function
- * through which binding with the specific value occurs.
+ * A Provider is a core concept in the library. It is essentially a function
+ * that facilitates binding to a specific value.
  */
 export interface Provider<T> {
   readonly [ID_SYMBOL]: number;
   readonly [NAME_SYMBOL]?: string;
 
   /**
-   * Returns bound to this provider value. Throws the exception if it's not found.
-   * If throwing the exception is not desired any value to the provider should
-   * be passed
+   * Returns the value bound to this provider. Throws an exception if the value is not found.
+   * To avoid an exception, pass a default value.
    */
   (): T;
 
   /**
-   * Returns bound to this provider value. Returns default one if the bound value
-   * is not found
+   * Returns the value bound to this provider, or the default value if the bound value is not found.
    * @param defValue
    */
   <DefValT>(defValue: DefValT): T | DefValT;
@@ -37,7 +35,7 @@ export interface Provider<T> {
 let PROVIDER_ID = 0;
 
 /**
- * Creates the new provider for some value with a specific type
+ * Creates a new provider for a specific value type.
  * @param name name for this provider used mainly for debugging purposes
  */
 export function createProvider<T>(name?: string): Provider<T> {
@@ -57,7 +55,7 @@ export function createProvider<T>(name?: string): Provider<T> {
 }
 
 /**
- * Determines whether the received value is a provider
+ * Determines whether the given value is a provider.
  * @param value value which should be tested
  */
 export function isProvider<T = unknown>(value: unknown): value is Provider<T> {
@@ -69,7 +67,7 @@ export function isProvider<T = unknown>(value: unknown): value is Provider<T> {
 }
 
 /**
- * Returns the id of the specified provider
+ * Returns the unique ID of the specified provider.
  * @param provider
  */
 export function getProviderID(provider: Provider<unknown>): number {

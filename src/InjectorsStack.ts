@@ -7,7 +7,7 @@ export class NoActiveInjectorError extends Error {
 }
 
 /**
- * Private class for holding current active injector
+ * Private class to manage the stack of active injectors.
  */
 class _InjectorsStack {
   private readonly injectors: Injector[] = [];
