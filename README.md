@@ -2,220 +2,195 @@
 
 Miniature dependency injection library for TypeScript and JavaScript.
 
-# Motivation
+**Nano-injector** is a lightweight, type-safe dependency injection library that doesn't rely on decorators. It uses plain functions as dependency providers, making it easy to work with interfaces, primitives, and even functions.
 
-There is a myriad of dependency injection libraries in typescript ecosystem. Most of them are built around decorators.
-Decorators are an obvious solution for such kinds of tasks. But in terms of dependency injection, they have its
-drawbacks - they are not type safe, which means that theoretically, it is possible to bind any value to the required type,
-and they don't work well with interfaces and primitives, therefore some workaround solutions are required to overcome
-this limitation.
-Typically, injecting of an interface, using these libraries, looks like as follows:
-```typescript
-// binding value
-injector.bind('IStorage').toValue(new DefStorage())
+## Features
 
-// injecting it
-@Inject('IStorage')
-private storage: IStorage
-```
-where string IStorage should be passed to Inject decorator in order to let the injector know which value should be injected
-to the required property. Since it is just a string, any string can be passed, therefore any type can be injected,
-and the compiler won't warn you about that. Also, there is type duplication, therefore the whole usage looks a bit ugly.
+- **Simple & Minimal:** Very concise API.
+- **Ultra Lightweight:** Zero dependencies, tiny footprint (~1.5kb gzipped).
+- **Type Safe:** Leverages TypeScript's type system for compile-time safety.
+- **No Decorators:** Works with plain classes and functions without `reflect-metadata`.
+- **Flexible:** Supports interfaces, primitives, and complex types.
 
-**Nano-injector** is addressing these issues, by doing dependency injection in a little bit different way - instead of using
-decorators, it uses plain functions as dependencies providers. By doing so, the same workflow, using Nano-injector,
-looks as follows:
+## Installation
 
-```typescript
-// defining provider
-const $IStorage = createProvider<IStorage>()
-
-// binding it to the value
-injector.bindProvider($IStorage).toValue(new DefStorage())
-
-// injecting it
-private storage = $IStorage()
-```
-Here _**$IStorage**_ is the provider, which basically is a plain function, and which should be bound to desired value through
-injector. Type of storage property compiler infers automatically, which reduces unneeded code duplication. Also, you can bind only
-value of the type specified during provider creation, if not to do so, the compiler will warn you about that.
-
-Also, unlike other libraries, Nano-injector is very small, with a very concise API.
-More usage details you can find below, and in the example directory.
-
-# Features
-
-- Very simple
-- Ultra lightweight
-- Zero dependencies
-- No decorators
-- Type safe
-- Injectable interfaces and primitives
-
-# Installation
 ```bash
 npm i nano-injector
 ```
-# Usage
-Importing dependencies:
-```typescript
-import { Injector, createProvider } from 'nano-injector'
-```
-Defining types and providers:
-```typescript
-// to distinguish providers from any other entities $ sign is used
-const $Clock = createProvider<(cb: () => void, time: number) => number>()
-const $ClockRate = createProvider<number>()
 
-const $CPU = createProvider<CPU>()
-interface CPU {
-  readonly model: string
-  readonly numCores: number
-  readonly frequency: number
+## Quick Start
+
+```typescript
+import { Injector, createProvider } from 'nano-injector';
+
+// 1. Define a provider
+const $Logger = createProvider<{ log: (msg: string) => void }>();
+
+// 2. Use the provider (just call it like a function!)
+class MyService {
+  constructor(private logger = $Logger()) {}
+
+  doSomething() {
+    this.logger.log('Hello from MyService!');
+  }
 }
 
-const $GPU = createProvider<GPU>()
-interface GPU {
-  readonly model: string
-  readonly numRayTracingCores: number
-  readonly memorySize: number
+// 3. Bind the provider in an injector
+const injector = new Injector();
+injector.bindProvider($Logger).toValue({ log: console.log });
+
+// 4. Create an instance with dependencies automatically injected
+const service = injector.createInstance(MyService);
+service.doSomething(); // Logs: Hello from MyService!
+```
+
+## Core Concepts
+
+### Providers
+
+Providers are the heart of Nano-injector. They act as "tokens" for your dependencies. By convention, they are prefixed with `$` to distinguish them from other variables.
+
+```typescript
+const $Config = createProvider<{ apiUrl: string }>();
+const $DbPort = createProvider<number>();
+```
+
+### The Injector
+
+The `Injector` manages bindings and resolves dependencies.
+
+```typescript
+const injector = new Injector();
+```
+
+## Binding Dependencies
+
+You can bind providers to values, constructors, or factories.
+
+### `.toValue(value)`
+Binds a provider to a specific value.
+
+```typescript
+injector.bindProvider($DbPort).toValue(5432);
+```
+
+### `.toConstructor(Class)`
+Binds a provider to a class. Nano-injector will instantiate the class when the dependency is requested.
+
+```typescript
+class FileLogger {
+  log(msg: string) { /* ... */ }
+}
+injector.bindProvider($Logger).toConstructor(FileLogger);
+```
+
+### `.toFactory(factory)`
+Binds a provider to a factory function. The factory receives the `injector` as an argument.
+
+```typescript
+injector.bindProvider($Logger).toFactory((injector) => {
+  const isDev = injector.tryGetValue($IsDev, false);
+  return isDev ? new ConsoleLogger() : new SentryLogger();
+});
+```
+
+### Singletons
+By default, `toConstructor` and `toFactory` create a new instance every time the dependency is injected. Use `.asSingleton()` to ensure the same instance is reused.
+
+```typescript
+injector.bindProvider($AuthService).toConstructor(AuthService).asSingleton();
+```
+
+## Injecting Dependencies
+
+There are several ways to resolve dependencies using an injector.
+
+### 1. Within Classes (`createInstance`)
+Call the provider function as a default parameter in the constructor. This keeps your classes testable as you can still pass dependencies manually.
+
+```typescript
+class MyController {
+  constructor(private service = $MyService()) {}
 }
 
-const $RAM = createProvider<RAM>()
-interface RAM {
-  readonly capacity: number
+const controller = injector.createInstance(MyController);
+```
+
+### 2. Within Functions (`callFunc`)
+Nano-injector can call a function and resolve any providers invoked within it.
+
+```typescript
+function startApp() {
+  const logger = $Logger();
+  logger.log('App starting...');
 }
 
-const $Motherboard = createProvider<Motherboard>()
-interface Motherboard {
-  readonly cpu: CPU
-  readonly gpu: GPU
-  readonly ram: RAM
+injector.callFunc(startApp);
+```
+
+### 3. Manual Resolution (`getValue`)
+Explicitly get the value bound to a provider.
+
+```typescript
+const logger = injector.getValue($Logger);
+```
+
+### 4. Injecting into Existing Objects (`injectValues`)
+Useful for objects not created by the injector (e.g., in some frameworks).
+
+```typescript
+const obj = { logger: null };
+injector.injectValues(obj, { logger: $Logger });
+```
+
+## Advanced Usage
+
+### Parent Injectors
+Create a hierarchy of injectors. If a binding is not found in the child injector, it will look in the parent.
+
+```typescript
+const parent = new Injector();
+parent.bindProvider($Theme).toValue('dark');
+
+const child = new Injector({ parent });
+child.getValue($Theme); // Returns 'dark'
+```
+
+### Multiple Bindings
+Bind multiple providers to the same value.
+
+```typescript
+injector.bindProvider($Logger, $ErrorHandler).toValue(myCombinedTool);
+```
+
+### The $Injector Provider
+The injector itself is available as a provider, allowing you to inject it into your services for dynamic resolution.
+
+```typescript
+import { $Injector } from 'nano-injector';
+
+class DynamicService {
+  constructor(private injector = $Injector()) {}
+
+  getSomething(type: string) {
+    return this.injector.getValue(type === 'A' ? $ProviderA : $ProviderB);
+  }
 }
-
-class GeForce911 implements GPU {
-  model = 'GeForce911'
-  numRayTracingCores = 100
-  memorySize = 2048
-}
-
-class DefMotherboard implements Motherboard {
-  constructor(
-    readonly model: string,
-    public cpu = $CPU(),
-    public gpu = $GPU(),
-    public ram = $RAM()
-  ) {}
-}
-
-class PC {
-  constructor(private name: string, private motherboard = $Motherboard()) {}
-}
 ```
-Defining injector through which injection occurs:
-```typescript
-const injector = new Injector()
-```
-Binding providers:
-```typescript
-// binding $CPU provider to exact value
-injector.bindProvider($CPU).toValue({ numCores: 4, model: 't7', frequency: 2000 })
 
-// binding $GPU provider to class which conforms to provider's returning type
-// calling asSingleton specifies that value should be created only once
-injector.bindProvider($GPU).toConstructor(GeForce911).asSingleton()
+### Circular Dependency Detection
+Nano-injector automatically detects circular dependencies and throws a `CircularDependencyError` with a helpful path description.
 
-// binding $RAM provider to the factory which creates value conforming to
-// provider's returning type
-injector.bindProvider($RAM).toFactory(() => ({
-  capacity: Math.floor(Math.random() * 1024),
-}))
+## Why Nano-injector?
 
-injector
-  .bindProvider($Motherboard)
-  .toFactory(
-    () =>
-      // only one required parameter is passed, the rest are initialized
-      // automatically through providers
-      new DefMotherboard('Asus ABC-123')
-  )
-  .asSingleton()
+Most DI libraries use decorators, which:
+1. **Are not fully type-safe:** Often requiring manual type annotations that can get out of sync.
+2. **Don't work well with interfaces:** Since interfaces don't exist at runtime, you usually need to use strings or symbols as tokens.
+3. **Require boilerplate:** Often needing `reflect-metadata` and specific `tsconfig` settings like `emitDecoratorMetadata`.
 
-// without ignoring compiler would tell you about wrong value's type
-// @ts-expect-error
-injector.bindProvider($ClockRate).toValue('asd')
+**Nano-injector** addresses these issues by using standard TypeScript functions. When you call `$Logger()`, TypeScript knows exactly what type is expected, and the library ensures that only a matching type can be bound.
 
-injector.bindProvider($ClockRate).toValue(1000)
-
-injector.bindProvider($Clock).toValue(setTimeout)
-```
-Creating instances with all dependencies injected:
-```typescript
-// the first parameter of PC constructor is required, so it is passed into the
-// construction method
-injector.createInstance(PC, 'My pc')
-```
-Directly getting the bound to the providers values:
-```typescript
-injector.getValue($CPU)
-injector.getValue($GPU)
-injector.getValue($RAM)
-
-injector.getValue($Clock)(() => console.log('Tick!'), 1000)
-```
-Manually creating instance with all its dependencies:
-```typescript
-new DefMotherboard(
-  'Asus xyz',
-  { frequency: 123, model: 'Intel xyz', numCores: 1 },
-  { model: '', memorySize: 0, numRayTracingCores: 1 },
-  { capacity: 123 },
-)
-```
-Calling function through injector:
-```typescript
-injector.callFunc(() => {
-  // inside function all providers return bound to them values
-  console.log('Inside function')
-  console.log('CPU:', $CPU())
-  console.log('GPU:', $GPU())
-  console.log('RAM:', $RAM())
-})
-```
-It's also possible to bind few providers to the same value. The bound value should conform to
-intersection of all providers' types:
-```typescript
-injector.bindProvider($RAM, $CPU, $GPU).toValue({
-  capacity: 10,
-  frequency: 100,
-  memorySize: 200,
-  model: 'ATB-21',
-  numCores: 2,
-  numRayTracingCores: 60,
-})
-```
-Creating composition of injectors:
-```typescript
-const childInjector = new Injector({ parent: injector })
-```
-Overriding $CPU binding of parent injector inside child injector:
-```typescript
-childInjector.bindProvider($CPU).toValue({ numCores: 1, model: 'z2', frequency: 999 })
-```
-Injecting value to the existing instance:
-```typescript
-const newMotherboard = new class {
-  gpu: GPU
-  cpu: CPU
-}
-injector.injectValues(newMotherboard, { cpu: $CPU, gpu: $GPU })
-```
-# [Docs](https://protoukr.github.io/nano-injector/)
-
-# Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
+## [Docs](https://protoukr.github.io/nano-injector/)
 
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT](LICENSE)
