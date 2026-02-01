@@ -6,3 +6,6 @@ logs
 npm-debug.log*
 .npm
 node_modules
+lib/
+typings/
+docs/
