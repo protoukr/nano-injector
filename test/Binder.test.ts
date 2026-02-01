@@ -10,8 +10,8 @@ describe('Binder', () => {
     injector = new Injector();
   });
 
-  describe('not singleton', () => {
-    it('check binding to value', () => {
+  describe('Transient Binding', () => {
+    it('should return the bound value', () => {
       const binder = new Binder<number>(injector);
 
       binder.toValue(10);
@@ -19,7 +19,7 @@ describe('Binder', () => {
       assert.equal(binder.getValue(), 10);
     });
 
-    it('check binding to constructor ', () => {
+    it('should create new instance for each call when bound to constructor', () => {
       const binder = new Binder<{ value: number }>(injector);
       class ValueType {
         value = 0;
@@ -31,7 +31,7 @@ describe('Binder', () => {
       assert.notStrictEqual(binder.getValue(), binder.getValue());
     });
 
-    it('check binding to factory', () => {
+    it('should create new instance for each call when bound to factory', () => {
       const binder = new Binder<{ value: number }>(new Injector());
 
       binder.toFactory(() => ({ value: 10 }));
@@ -41,8 +41,8 @@ describe('Binder', () => {
     });
   });
 
-  describe('singleton', () => {
-    it('check binding to constructor', () => {
+  describe('Singleton Binding', () => {
+    it('should share value when bound to constructor as singleton', () => {
       const binder = new Binder<{ value: number }>(injector);
       class ValueType {
         value = 10;
@@ -54,7 +54,7 @@ describe('Binder', () => {
       assert.strictEqual(binder.getValue(), binder.getValue());
     });
 
-    it('check binding to factory', () => {
+    it('should share value when bound to factory as singleton', () => {
       const binder = new Binder<{ value: number }>(new Injector());
 
       binder.toFactory(() => ({ value: 10 })).asSingleton();

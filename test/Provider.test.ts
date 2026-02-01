@@ -1,36 +1,42 @@
 import { assert } from 'chai';
 import { describe, it } from 'mocha';
+import { Injector } from '../src/Injector';
 import { createProvider, getProviderID, getProviderName, isProvider } from '../src/Provider';
 
 describe('Provider', () => {
-  it('check provider determination', () => {
+  it('should correctly identify providers', () => {
     assert.isFalse(isProvider(0));
     assert.isFalse(isProvider(() => undefined));
     assert.isTrue(isProvider(createProvider()));
   });
 
-  it('check id getting', () => {
+  it('should have a unique ID', () => {
     const id = getProviderID(createProvider());
-
     assert.isNumber(id);
   });
 
-  it('check name getting', () => {
-    const name = getProviderName(createProvider('provider'));
+  it('should generate different IDs for different providers', () => {
+    const p1 = createProvider();
+    const p2 = createProvider();
+    assert.notEqual(getProviderID(p1), getProviderID(p2));
+  });
 
+  it('should store and retrieve the provider name', () => {
+    const name = getProviderName(createProvider('provider'));
     assert.strictEqual(name, 'provider');
   });
 
-  it('check exception throwing', () => {
+  it('should throw when called without binding (direct call)', () => {
     const provider = createProvider();
-
     assert.throws(() => provider());
   });
 
-  it('check default value returning', () => {
+  it('should return default value when passed one', () => {
+    const injector = new Injector();
     const provider = createProvider<object>();
 
-    const val = provider(null);
+    // We must call this inside an injection context
+    const val = injector.callFunc(() => provider(null));
 
     assert.isNull(val);
   });

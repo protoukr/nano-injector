@@ -4,7 +4,7 @@ import { NoBinderError, CircularDependencyError, Injector } from '../src/Injecto
 import { createProvider } from '../src/Provider';
 
 describe('Injector', () => {
-  it('check bound value getting', () => {
+  it('should resolve the bound value', () => {
     const provider = createProvider<number>();
     const injector = new Injector();
     injector.bindProvider(provider).toValue(0);
@@ -14,27 +14,50 @@ describe('Injector', () => {
     assert.equal(value, 0);
   });
 
-  it('check unbound value getting', () => {
+  it('should throw NoBinderError when value is not bound', () => {
     const provider = createProvider<number>();
     const injector = new Injector();
 
     assert.throws(() => injector.getValue(provider), NoBinderError);
   });
 
-  it('check unbound value safe getting', () => {
+  it('should return default value when provider is not bound', () => {
     const provider = createProvider<number>();
     const injector = new Injector();
 
-    const value = injector.tryGetValue(provider, 0);
+    const value = injector.tryGetValue(provider, 100);
 
-    assert.strictEqual(value, 0);
+    assert.strictEqual(value, 100);
   });
 
-  it('check value getting through composition', () => {
+  it('should return bound value instead of default value if bound', () => {
+    const provider = createProvider<number>();
+    const injector = new Injector();
+    injector.bindProvider(provider).toValue(50);
+
+    const value = injector.tryGetValue(provider, 100);
+
+    assert.strictEqual(value, 50);
+  });
+
+  it('should resolve value from parent injector', () => {
+    const provider = createProvider<number>();
+    const parentInjector = new Injector();
+    const childInjector = new Injector({ parent: parentInjector });
+
+    parentInjector.bindProvider(provider).toValue(42);
+
+    const value = childInjector.getValue(provider);
+
+    assert.strictEqual(value, 42);
+  });
+
+  it('should share singleton instance from parent injector', () => {
     const provider = createProvider<number>();
     const parentInjector = new Injector();
     const childInjector1 = new Injector({ parent: parentInjector });
     const childInjector2 = new Injector({ parent: parentInjector });
+
     parentInjector
       .bindProvider(provider)
       .toFactory(() => Math.random())
@@ -46,7 +69,7 @@ describe('Injector', () => {
     assert.strictEqual(value1, value2);
   });
 
-  it('check value overriding in child injector', () => {
+  it('should prioritize child injector bindings over parent', () => {
     const provider = createProvider<number>();
     const parentInjector = new Injector();
     const childInjector = new Injector({ parent: parentInjector });
@@ -59,7 +82,7 @@ describe('Injector', () => {
     assert.strictEqual(value, 5);
   });
 
-  it('check resolving providers inside function', () => {
+  it('should resolve dependencies inside a function call', () => {
     const p = createProvider<number>();
     const injector = new Injector();
     injector.bindProvider(p).toValue(10);
@@ -69,11 +92,13 @@ describe('Injector', () => {
     assert.strictEqual(value, 10);
   });
 
-  it('check circular dependencies determination', () => {
+  it('should detect circular dependencies', () => {
     const p1 = createProvider<number>('1');
     const p2 = createProvider<number>('2');
     const p3 = createProvider<number>('3');
     const injector = new Injector();
+
+    // p1 -> p2 -> p3 -> p1
     injector.bindProvider(p1).toFactory(() => p2());
     injector.bindProvider(p2).toFactory(() => p3());
     injector.bindProvider(p3).toFactory(() => p1());
@@ -81,7 +106,7 @@ describe('Injector', () => {
     assert.throws(() => injector.getValue(p1), CircularDependencyError);
   });
 
-  it('check instance creation', () => {
+  it('should create an instance with resolved dependencies', () => {
     const provider = createProvider<number>();
     class SomeClass {
       constructor(public value = provider()) {}
@@ -95,21 +120,40 @@ describe('Injector', () => {
     assert.strictEqual(inst.value, 10);
   });
 
-  it('check binding few providers to one value', () => {
+  it('should pass explicit arguments to constructor during instance creation', () => {
+    const provider = createProvider<number>();
+    class SomeClass {
+      constructor(
+        public name: string,
+        public value = provider(),
+      ) {}
+    }
+    const injector = new Injector();
+    injector.bindProvider(provider).toValue(99);
+
+    const inst = injector.createInstance(SomeClass, 'test');
+
+    assert.instanceOf(inst, SomeClass);
+    assert.strictEqual(inst.name, 'test');
+    assert.strictEqual(inst.value, 99);
+  });
+
+  it('should bind multiple providers to the same value', () => {
     const p1 = createProvider<{ val1: number }>();
     const p2 = createProvider<{ val2: number }>();
     const injector = new Injector();
-    injector.bindProvider(p1, p2).toValue({ val1: 1, val2: 2 });
+    const sharedValue = { val1: 1, val2: 2 };
+
+    injector.bindProvider(p1, p2).toValue(sharedValue);
 
     const v1 = injector.getValue(p1);
     const v2 = injector.getValue(p2);
 
-    // TODO: check in future typescript versions
-    // @ts-expect-error
-    assert.isTrue(v1 === v2);
+    assert.strictEqual(v1, sharedValue);
+    assert.strictEqual(v2, sharedValue);
   });
 
-  it('check injecting values to existing instance', () => {
+  it('should inject specific values into an object', () => {
     const p1 = createProvider<number>('1');
     const p2 = createProvider<number>('2');
     const p3 = createProvider<number>('3');
@@ -117,11 +161,8 @@ describe('Injector', () => {
     injector.bindProvider(p1).toValue(1);
     injector.bindProvider(p2).toValue(2);
     injector.bindProvider(p3).toValue(3);
-    const obj = {
-      v1: 0,
-      v2: 0,
-      v3: 0,
-    };
+
+    const obj = { v1: 0, v2: 0, v3: 0 };
 
     injector.injectValues(obj, { v1: p1, v2: p2, v3: p3 });
 
