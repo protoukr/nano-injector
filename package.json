@@ -26,14 +26,15 @@
     "typings"
   ],
   "scripts": {
+    "prebuild": "npm run clean",
     "build": "tsc",
-    "clear": "rimraf typings docs lib",
+    "clean": "rimraf typings docs lib",
     "docs": "typedoc src/index.ts",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
-    "precommit": "npm run clear && npm run lint  && npm test && npm run build && npm run docs",
-    "prepublishOnly": "npm run clear && npm test && npm run build",
-    "test": "ts-mocha -p ./tsconfig.json ./test/*.test.ts"
+    "prepublishOnly": "npm run verify",
+    "test": "ts-mocha -p ./tsconfig.json ./test/*.test.ts",
+    "verify": "npm run format:check && npm test && npm run build"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",
