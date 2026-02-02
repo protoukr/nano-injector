@@ -1,66 +1,66 @@
-import { assert } from 'chai'
-import { beforeEach, describe, it } from 'mocha'
-import { Binder } from '../src/Binder'
-import { Injector } from '../src/Injector'
+import { assert } from 'chai';
+import { beforeEach, describe, it } from 'mocha';
+import { Binder } from '../src/Binder';
+import { Injector } from '../src/Injector';
 
 describe('Binder', () => {
-  let injector: Injector
+  let injector: Injector;
 
   beforeEach(() => {
-    injector = new Injector()
-  })
+    injector = new Injector();
+  });
 
   describe('not singleton', () => {
     it('check binding to value', () => {
-      const binder = new Binder<number>(injector)
+      const binder = new Binder<number>(injector);
 
-      binder.toValue(10)
+      binder.toValue(10);
 
-      assert.equal(binder.getValue(), 10)
-    })
+      assert.equal(binder.getValue(), 10);
+    });
 
     it('check binding to constructor ', () => {
-      const binder = new Binder<{ value: number }>(injector)
+      const binder = new Binder<{ value: number }>(injector);
       class ValueType {
-        value = 0
+        value = 0;
       }
 
-      binder.toConstructor(ValueType)
+      binder.toConstructor(ValueType);
 
-      assert.equal(binder.getValue().value, 0)
-      assert.notStrictEqual(binder.getValue(), binder.getValue())
-    })
+      assert.equal(binder.getValue().value, 0);
+      assert.notStrictEqual(binder.getValue(), binder.getValue());
+    });
 
     it('check binding to factory', () => {
-      const binder = new Binder<{ value: number }>(new Injector())
+      const binder = new Binder<{ value: number }>(new Injector());
 
-      binder.toFactory(() => ({ value: 10 }))
+      binder.toFactory(() => ({ value: 10 }));
 
-      assert.equal(binder.getValue().value, 10)
-      assert.notStrictEqual(binder.getValue(), binder.getValue())
-    })
-  })
+      assert.equal(binder.getValue().value, 10);
+      assert.notStrictEqual(binder.getValue(), binder.getValue());
+    });
+  });
 
   describe('singleton', () => {
     it('check binding to constructor', () => {
-      const binder = new Binder<{ value: number }>(injector)
+      const binder = new Binder<{ value: number }>(injector);
       class ValueType {
-        value = 10
+        value = 10;
       }
 
-      binder.toConstructor(ValueType).asSingleton()
+      binder.toConstructor(ValueType).asSingleton();
 
-      assert.equal(binder.getValue().value, 10)
-      assert.strictEqual(binder.getValue(), binder.getValue())
-    })
+      assert.equal(binder.getValue().value, 10);
+      assert.strictEqual(binder.getValue(), binder.getValue());
+    });
 
     it('check binding to factory', () => {
-      const binder = new Binder<{ value: number }>(new Injector())
+      const binder = new Binder<{ value: number }>(new Injector());
 
-      binder.toFactory(() => ({ value: 10 })).asSingleton()
+      binder.toFactory(() => ({ value: 10 })).asSingleton();
 
-      assert.equal(binder.getValue().value, 10)
-      assert.strictEqual(binder.getValue(), binder.getValue())
-    })
-  })
-})
+      assert.equal(binder.getValue().value, 10);
+      assert.strictEqual(binder.getValue(), binder.getValue());
+    });
+  });
+});

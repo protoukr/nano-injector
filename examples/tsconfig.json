@@ -5,7 +5,5 @@
     "target": "ESNext",
     "outDir": "build"
   },
-  "files": [
-    "./index.ts"
-  ]
+  "files": ["./index.ts"]
 }

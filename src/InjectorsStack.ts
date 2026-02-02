@@ -1,8 +1,8 @@
-import { Injector } from './Injector'
+import { Injector } from './Injector';
 
 export class NoActiveInjectorError extends Error {
-  constructor () {
-    super('No active injector found')
+  constructor() {
+    super('No active injector found');
   }
 }
 
@@ -10,26 +10,26 @@ export class NoActiveInjectorError extends Error {
  * Private class for holding current active injector
  */
 class _InjectorsStack {
-  private readonly injectors: Injector[] = []
-  private _activeInjector?: Injector
+  private readonly injectors: Injector[] = [];
+  private _activeInjector?: Injector;
 
-  get activeInjector (): Injector {
+  get activeInjector(): Injector {
     if (this._activeInjector == null) {
-      throw new NoActiveInjectorError()
+      throw new NoActiveInjectorError();
     }
-    return this._activeInjector
+    return this._activeInjector;
   }
 
-  push (injector: Injector): void {
+  push(injector: Injector): void {
     if (this._activeInjector != null) {
-      this.injectors.push(this._activeInjector)
+      this.injectors.push(this._activeInjector);
     }
-    this._activeInjector = injector
+    this._activeInjector = injector;
   }
 
-  pop (): void {
-    this._activeInjector = this.injectors.pop()
+  pop(): void {
+    this._activeInjector = this.injectors.pop();
   }
 }
 
-export const InjectorsStack = new _InjectorsStack()
+export const InjectorsStack = new _InjectorsStack();

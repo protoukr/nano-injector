@@ -1,2 +1,2 @@
-export * from './Injector'
-export * from './Provider'
+export * from './Injector';
+export * from './Provider';
