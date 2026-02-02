@@ -1,5 +1,3 @@
-import { assert } from 'chai';
-import { beforeEach, describe, it } from 'mocha';
 import { Binder } from '../src/Binder';
 import { Injector } from '../src/Injector';
 
@@ -16,7 +14,7 @@ describe('Binder', () => {
 
       binder.toValue(10);
 
-      assert.equal(binder.getValue(), 10);
+      expect(binder.getValue()).toBe(10);
     });
 
     it('should create new instance for each call when bound to constructor', () => {
@@ -27,8 +25,8 @@ describe('Binder', () => {
 
       binder.toConstructor(ValueType);
 
-      assert.equal(binder.getValue().value, 0);
-      assert.notStrictEqual(binder.getValue(), binder.getValue());
+      expect(binder.getValue().value).toBe(0);
+      expect(binder.getValue()).not.toBe(binder.getValue());
     });
 
     it('should create new instance for each call when bound to factory', () => {
@@ -36,8 +34,8 @@ describe('Binder', () => {
 
       binder.toFactory(() => ({ value: 10 }));
 
-      assert.equal(binder.getValue().value, 10);
-      assert.notStrictEqual(binder.getValue(), binder.getValue());
+      expect(binder.getValue().value).toBe(10);
+      expect(binder.getValue()).not.toBe(binder.getValue());
     });
   });
 
@@ -50,8 +48,8 @@ describe('Binder', () => {
 
       binder.toConstructor(ValueType).asSingleton();
 
-      assert.equal(binder.getValue().value, 10);
-      assert.strictEqual(binder.getValue(), binder.getValue());
+      expect(binder.getValue().value).toBe(10);
+      expect(binder.getValue()).toBe(binder.getValue());
     });
 
     it('should share value when bound to factory as singleton', () => {
@@ -59,8 +57,8 @@ describe('Binder', () => {
 
       binder.toFactory(() => ({ value: 10 })).asSingleton();
 
-      assert.equal(binder.getValue().value, 10);
-      assert.strictEqual(binder.getValue(), binder.getValue());
+      expect(binder.getValue().value).toBe(10);
+      expect(binder.getValue()).toBe(binder.getValue());
     });
   });
 });

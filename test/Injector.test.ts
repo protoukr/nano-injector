@@ -1,5 +1,3 @@
-import { assert } from 'chai';
-import { describe, it } from 'mocha';
 import { NoBinderError, CircularDependencyError, Injector } from '../src/Injector';
 import { createProvider } from '../src/Provider';
 
@@ -11,14 +9,14 @@ describe('Injector', () => {
 
     const value = injector.getValue(provider);
 
-    assert.equal(value, 0);
+    expect(value).toBe(0);
   });
 
   it('should throw NoBinderError when value is not bound', () => {
     const provider = createProvider<number>();
     const injector = new Injector();
 
-    assert.throws(() => injector.getValue(provider), NoBinderError);
+    expect(() => injector.getValue(provider)).toThrow(NoBinderError);
   });
 
   it('should return default value when provider is not bound', () => {
@@ -27,7 +25,7 @@ describe('Injector', () => {
 
     const value = injector.tryGetValue(provider, 100);
 
-    assert.strictEqual(value, 100);
+    expect(value).toBe(100);
   });
 
   it('should return bound value instead of default value if bound', () => {
@@ -37,7 +35,7 @@ describe('Injector', () => {
 
     const value = injector.tryGetValue(provider, 100);
 
-    assert.strictEqual(value, 50);
+    expect(value).toBe(50);
   });
 
   it('should resolve value from parent injector', () => {
@@ -49,7 +47,7 @@ describe('Injector', () => {
 
     const value = childInjector.getValue(provider);
 
-    assert.strictEqual(value, 42);
+    expect(value).toBe(42);
   });
 
   it('should share singleton instance from parent injector', () => {
@@ -66,7 +64,7 @@ describe('Injector', () => {
     const value1 = childInjector1.getValue(provider);
     const value2 = childInjector2.getValue(provider);
 
-    assert.strictEqual(value1, value2);
+    expect(value1).toBe(value2);
   });
 
   it('should prioritize child injector bindings over parent', () => {
@@ -79,7 +77,7 @@ describe('Injector', () => {
 
     const value = childInjector.getValue(provider);
 
-    assert.strictEqual(value, 5);
+    expect(value).toBe(5);
   });
 
   it('should resolve dependencies inside a function call', () => {
@@ -89,7 +87,7 @@ describe('Injector', () => {
 
     const value = injector.callFunc((value = p()) => value);
 
-    assert.strictEqual(value, 10);
+    expect(value).toBe(10);
   });
 
   it('should detect circular dependencies', () => {
@@ -103,7 +101,7 @@ describe('Injector', () => {
     injector.bindProvider(p2).toFactory(() => p3());
     injector.bindProvider(p3).toFactory(() => p1());
 
-    assert.throws(() => injector.getValue(p1), CircularDependencyError);
+    expect(() => injector.getValue(p1)).toThrow(CircularDependencyError);
   });
 
   it('should create an instance with resolved dependencies', () => {
@@ -116,8 +114,8 @@ describe('Injector', () => {
 
     const inst = injector.createInstance(SomeClass);
 
-    assert.instanceOf(inst, SomeClass);
-    assert.strictEqual(inst.value, 10);
+    expect(inst).toBeInstanceOf(SomeClass);
+    expect(inst.value).toBe(10);
   });
 
   it('should pass explicit arguments to constructor during instance creation', () => {
@@ -133,9 +131,9 @@ describe('Injector', () => {
 
     const inst = injector.createInstance(SomeClass, 'test');
 
-    assert.instanceOf(inst, SomeClass);
-    assert.strictEqual(inst.name, 'test');
-    assert.strictEqual(inst.value, 99);
+    expect(inst).toBeInstanceOf(SomeClass);
+    expect(inst.name).toBe('test');
+    expect(inst.value).toBe(99);
   });
 
   it('should bind multiple providers to the same value', () => {
@@ -149,8 +147,8 @@ describe('Injector', () => {
     const v1 = injector.getValue(p1);
     const v2 = injector.getValue(p2);
 
-    assert.strictEqual(v1, sharedValue);
-    assert.strictEqual(v2, sharedValue);
+    expect(v1).toBe(sharedValue);
+    expect(v2).toBe(sharedValue);
   });
 
   it('should inject specific values into an object', () => {
@@ -166,6 +164,6 @@ describe('Injector', () => {
 
     injector.injectValues(obj, { v1: p1, v2: p2, v3: p3 });
 
-    assert.deepEqual(obj, { v1: 1, v2: 2, v3: 3 });
+    expect(obj).toEqual({ v1: 1, v2: 2, v3: 3 });
   });
 });

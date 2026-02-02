@@ -1,34 +1,32 @@
-import { assert } from 'chai';
-import { describe, it } from 'mocha';
 import { Injector } from '../src/Injector';
 import { createProvider, getProviderID, getProviderName, isProvider } from '../src/Provider';
 
 describe('Provider', () => {
   it('should correctly identify providers', () => {
-    assert.isFalse(isProvider(0));
-    assert.isFalse(isProvider(() => undefined));
-    assert.isTrue(isProvider(createProvider()));
+    expect(isProvider(0)).toBe(false);
+    expect(isProvider(() => undefined)).toBe(false);
+    expect(isProvider(createProvider())).toBe(true);
   });
 
   it('should have a unique ID', () => {
     const id = getProviderID(createProvider());
-    assert.isNumber(id);
+    expect(typeof id).toBe('number');
   });
 
   it('should generate different IDs for different providers', () => {
     const p1 = createProvider();
     const p2 = createProvider();
-    assert.notEqual(getProviderID(p1), getProviderID(p2));
+    expect(getProviderID(p1)).not.toBe(getProviderID(p2));
   });
 
   it('should store and retrieve the provider name', () => {
     const name = getProviderName(createProvider('provider'));
-    assert.strictEqual(name, 'provider');
+    expect(name).toBe('provider');
   });
 
   it('should throw when called without binding (direct call)', () => {
     const provider = createProvider();
-    assert.throws(() => provider());
+    expect(() => provider()).toThrow();
   });
 
   it('should return default value when passed one', () => {
@@ -38,6 +36,6 @@ describe('Provider', () => {
     // We must call this inside an injection context
     const val = injector.callFunc(() => provider(null));
 
-    assert.isNull(val);
+    expect(val).toBeNull();
   });
 });
