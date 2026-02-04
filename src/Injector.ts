@@ -113,9 +113,11 @@ export class Injector {
   getValue<ProviderT extends Provider<unknown>>(provider: ProviderT): ProviderValueType<ProviderT> {
     const binder = this.getBinder(provider);
     this.pushResolvingProvider(provider);
-    const value = this.activateAndCall(() => binder.getValue() as ProviderValueType<ProviderT>);
-    this.popResolvingProvder();
-    return value;
+    try {
+      return this.activateAndCall(() => binder.getValue() as ProviderValueType<ProviderT>);
+    } finally {
+      this.popResolvingProvder();
+    }
   }
 
   /**

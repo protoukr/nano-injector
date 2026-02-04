@@ -166,4 +166,24 @@ describe('Injector', () => {
 
     expect(obj).toEqual({ v1: 1, v2: 2, v3: 3 });
   });
+
+  it('should not throw CircularDependencyError if a previous resolution failed', () => {
+    const provider = createProvider<number>();
+    const injector = new Injector();
+
+    let shouldThrow = true;
+    injector.bindProvider(provider).toFactory(() => {
+      if (shouldThrow) {
+        throw new Error('Resolution failed');
+      }
+      return 42;
+    });
+
+    // First attempt fails
+    expect(() => injector.getValue(provider)).toThrow('Resolution failed');
+
+    // Second attempt succeeds (or fails with the same error, but crucially NOT CircularDependencyError)
+    shouldThrow = false;
+    expect(injector.getValue(provider)).toBe(42);
+  });
 });
